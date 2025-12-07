@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shadow Client</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07040d;
+  --accent:#8b2bff;
+  --accent2:#d77fff;
+  --muted:rgba(255,255,255,0.72);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:"Inter",sans-serif;background:var(--bg);color:#eef0ff;overflow-x:hidden;position:relative;}
+body{transition:background .3s;}
+.page{display:none;min-height:100vh;flex-direction:column;justify-content:center;align-items:center;gap:36px;padding:20px;opacity:0;transform:translateY(20px);transition:opacity .6s ease, transform .6s ease;}
+.page.active{display:flex;opacity:1;transform:translateY(0);}
+
+/* Background */
+.backdrop{position:fixed;inset:0;background:linear-gradient(140deg,#07040d,#1a0530,#2a083f,#0b0218);background-size:400% 400%;animation:flow 28s linear infinite;z-index:-3;}
+@keyframes flow{0%{background-position:0 50%}50%{background-position:100% 50%}100%{background-position:0 50%}}
+
+/* Particles canvas */
+#particles{position:fixed;inset:0;z-index:-2;pointer-events:none;}
+
+/* Cursor ring */
+.cursor-ring{position:fixed;left:0;top:0;width:30px;height:30px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:9999;display:grid;place-items:center;mix-blend-mode:screen;transition:transform .08s linear;}
+.cursor-ring .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 22px var(--accent);}
+
+/* Bottom nav */
+.bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:28px;z-index:80;display:flex;gap:18px;padding:10px 20px;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.05));backdrop-filter:blur(18px) saturate(120%);box-shadow:0 14px 50px rgba(0,0,0,0.55),0 0 40px rgba(139,43,255,0.06);border:1px solid rgba(255,255,255,0.06);}
+.bottom-nav button{background:transparent;border:0;color:var(--muted);padding:10px 18px;border-radius:12px;font-weight:700;font-size:14px;transition:.18s;}
+.bottom-nav button.active,.bottom-nav button:hover{color:#fff;text-shadow:0 0 12px rgba(139,43,255,0.28);transform:translateY(-4px);}
+
+/* Top Logo */
+.top-logo{position:absolute;top:20px;left:20px;width:80px;height:80px;z-index:90;border-radius:16px;overflow:hidden;animation:logoFloat 4s ease-in-out infinite alternate;}
+.top-logo img{width:100%;height:100%;object-fit:contain;}
+@keyframes logoFloat{0%{transform:translateY(0px);}100%{transform:translateY(8px);}}
+
+/* Home page */
+.home-title{
+  font-size:52px;font-weight:800;text-align:center;
+  background: linear-gradient(90deg, #8b2bff, #d77fff, #8b2bff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:glow 2s infinite alternate;
+}
+@keyframes glow{0%{text-shadow:0 0 12px rgba(139,43,255,0.4),0 0 24px rgba(215,127,255,0.2);}50%{text-shadow:0 0 20px rgba(139,43,255,0.6),0 0 40px rgba(215,127,255,0.3);}100%{text-shadow:0 0 12px rgba(139,43,255,0.4),0 0 24px rgba(215,127,255,0.2);}}
+.home-subtitle{font-size:20px;font-weight:500;color:var(--muted);text-align:center;max-width:900px;margin-top:12px;line-height:1.5;}
+.home-screenshots{display:flex;justify-content:center;align-items:center;gap:36px;width:100%;max-width:1100px;margin-top:20px;perspective:1200px;}
+.screenshot{width:260px;height:160px;border-radius:16px;overflow:hidden;background:linear-gradient(180deg,rgba(255,255,255,0.015),rgba(0,0,0,0.06));box-shadow:0 18px 60px rgba(0,0,0,0.6);transition:transform .35s cubic-bezier(.2,.9,.3,1),box-shadow .25s;animation:float 6s ease-in-out infinite alternate;}
+.screenshot img{width:100%;height:100%;object-fit:cover;}
+.screenshot:hover{transform:scale(1.08) rotateY(5deg);box-shadow:0 20px 80px rgba(139,43,255,0.6);}
+@keyframes float{0%{transform:translateY(0px)}100%{transform:translateY(12px)}}
+
+/* Download page */
+.download-box{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:36px;border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.05));backdrop-filter:blur(20px);box-shadow:0 18px 60px rgba(0,0,0,0.6);text-align:center;max-width:480px;animation:fadeInUp 0.7s;}
+.download-box img{width:140px;height:140px;object-fit:contain;border-radius:12px;border:1px solid rgba(255,255,255,0.05);}
+.download-box h2{font-size:28px;color:#fff;text-shadow:0 0 12px rgba(139,43,255,0.6);}
+.download-box p{color:var(--muted);}
+.download-box button{margin-top:12px;padding:14px 36px;border:none;border-radius:12px;font-weight:700;font-size:16px;cursor:pointer;transition:.18s;background:var(--accent);color:#fff;box-shadow:0 8px 28px rgba(139,43,255,0.45);}
+.download-box button:hover{transform:translateY(-4px) scale(1.04);box-shadow:0 14px 44px rgba(139,43,255,0.55);}
+
+/* Reviews page */
+.reviews-title{
+  font-size:48px;
+  font-weight:800;
+  text-align:center;
+  color:#fff;
+  text-shadow:0 0 12px rgba(139,43,255,0.6);
+  animation:reviewsGlow 2s infinite alternate;
+  background: linear-gradient(90deg, #8b2bff, #d77fff, #8b2bff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+@keyframes reviewsGlow{
+  0%{ text-shadow:0 0 12px rgba(139,43,255,0.4),0 0 24px rgba(215,127,255,0.2);}
+  50%{ text-shadow:0 0 20px rgba(139,43,255,0.6),0 0 40px rgba(215,127,255,0.3);}
+  100%{ text-shadow:0 0 12px rgba(139,43,255,0.4),0 0 24px rgba(215,127,255,0.2);}
+}
+.reviews-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;width:100%;max-width:1000px;margin-top:16px;}
+.review-card{padding:18px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,0.45);color:var(--muted);text-align:center;animation:fadeIn 0.7s;}
+.review-card h4{margin-bottom:6px;color:#fff;}
+.review-card p{font-size:14px;line-height:1.4;}
+.review-wrap-special{grid-column:1/-1;display:flex;justify-content:center;gap:18px;}
+
+/* Footer */
+.footer{width:fit-content;margin:28px auto;padding:10px 18px;border-radius:14px;background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));color:var(--muted);}
+
+/* Animations */
+@keyframes fadeIn{0%{opacity:0;transform:translateY(10px);}100%{opacity:1;transform:translateY(0);}}
+@keyframes fadeInUp{0%{opacity:0;transform:translateY(30px);}100%{opacity:1;transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<div class="backdrop"></div>
+<canvas id="particles"></canvas>
+<div class="cursor-ring" id="cursor"><div class="dot"></div></div>
+
+<!-- Top Logo -->
+<div class="top-logo"><img src="not.png" alt="Logo"></div>
+
+<!-- HOME PAGE -->
+<section id="home" class="page active">
+  <div class="home-title">Shadow Client</div>
+  <div class="home-subtitle">Why choose us?<br>Safe, fast, and reliable client for smooth performance on any system.</div>
+  <div class="home-screenshots">
+    <div class="screenshot"><img src="scafolding.png" alt="Left Screenshot"></div>
+    <div class="screenshot"><img src="computing.png" alt="Middle Screenshot"></div>
+    <div class="screenshot"><img src="xray.png" alt="Right Screenshot"></div>
+  </div>
+</section>
+
+<!-- DOWNLOAD PAGE -->
+<section id="download" class="page">
+  <div class="download-box">
+    <img src="not.png" alt="Client">
+    <h2>Download Shadow Client</h2>
+    <p>Experience ultra-fast performance, stable gameplay, and a secure environment. One click is all it takes!</p>
+    <button>Download Now</button>
+  </div>
+</section>
+
+<!-- REVIEWS PAGE -->
+<section id="reviews" class="page">
+  <h3 class="reviews-title">User Reviews</h3>
+  <div class="reviews-wrap" id="reviewsWrap"></div>
+</section>
+
+<div class="footer">© 2025 Shadow Client — Crafted for performance & style</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav" id="navBar">
+  <button data-target="#home" class="active">Home</button>
+  <button data-target="#download">Download</button>
+  <button data-target="#reviews">Reviews</button>
+</div>
+
+<script>
+// Cursor
+const cursor = document.getElementById('cursor');
+document.addEventListener('mousemove', e=>{
+  cursor.style.transform = `translate(${e.clientX}px,${e.clientY}px)`;
+});
+
+// Page nav with smooth transitions
+const pages = document.querySelectorAll('.page');
+const navButtons = document.querySelectorAll('#navBar button');
+navButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const target = document.querySelector(btn.dataset.target);
+    pages.forEach(p=>{
+      p.style.opacity='0';
+      setTimeout(()=>p.classList.remove('active'),300);
+    });
+    setTimeout(()=>{
+      target.classList.add('active');
+      target.style.opacity='1';
+    },310);
+    navButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// Reviews - 10 reviews
+const reviewsWrap = document.getElementById('reviewsWrap');
+const reviewsData = [
+  {name:"Alex",review:"Absolutely smooth client, FPS boost is real!"},
+  {name:"Jade",review:"Love the glass UI, looks amazing."},
+  {name:"Sam",review:"Customizable features are top-notch."},
+  {name:"Riley",review:"Stable and fast, highly recommend."},
+  {name:"Casey",review:"Visuals are lit, and controls are sleek."},
+  {name:"Morgan",review:"Runs perfectly on my system, no crashes."},
+  {name:"Taylor",review:"Very easy to use, intuitive interface."},
+  {name:"Jordan",review:"Excellent performance, very stable."},
+  {name:"Drew",review:"Safe and reliable, worth downloading."},
+  {name:"Skylar",review:"Aesthetic design with smooth animations."}
+];
+reviewsData.slice(0,8).forEach(r=>{
+  const div=document.createElement('div');
+  div.className='review-card';
+  div.innerHTML=`<h4>${r.name}</h4><p>${r.review}</p>`;
+  reviewsWrap.appendChild(div);
+});
+const specialWrap=document.createElement('div');
+specialWrap.className='review-wrap-special';
+reviewsData.slice(8).forEach(r=>{
+  const div=document.createElement('div');
+  div.className='review-card';
+  div.innerHTML=`<h4>${r.name}</h4><p>${r.review}</p>`;
+  specialWrap.appendChild(div);
+});
+reviewsWrap.appendChild(specialWrap);
+
+// Particles
+const canvas=document.getElementById('particles');
+const ctx=canvas.getContext('2d');
+canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight;});
+
+let particles=[];
+for(let i=0;i<120;i++){
+  particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:Math.random()*2+1,dx:(Math.random()-0.5)*0.6,dy:(Math.random()-0.5)*0.6});
+}
+document.addEventListener('mousemove',e=>{
+  particles.forEach(p=>{
+    const dist=Math.hypot(p.x-e.clientX,p.y-e.clientY);
+    if(dist<120){ p.x+=(e.clientX-p.x)*0.02; p.y+=(e.clientY-p.y)*0.02; }
+  });
+});
+function drawParticles(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
+    p.x+=p.dx; p.y+=p.dy;
+    if(p.x>canvas.width||p.x<0)p.dx*=-1;
+    if(p.y>canvas.height||p.y<0)p.dy*=-1;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle="rgba(139,43,255,0.3)";
+    ctx.fill();
+  });
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      let a=particles[i],b=particles[j];
+      let d=Math.hypot(a.x-b.x,a.y-b.y);
+      if(d<100){
+        ctx.beginPath();
+        ctx.strokeStyle=`rgba(139,43,255,${1-d/100*0.3})`;
+        ctx.lineWidth=0.8;
+        ctx.moveTo(a.x,a.y);
+        ctx.lineTo(b.x,b.y);
+        ctx.stroke();
+      }
+    }
+  }
+  requestAnimationFrame(drawParticles);
+}
+drawParticles();
+</script>
+</body>
+</html>
